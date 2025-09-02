@@ -13,20 +13,6 @@ This pipeline consists of several components:
 - **File Storage:** S3 bucket for temporary data and job artifacts  
 
 
-## Project Structure
-
-├── glue/
-│ ├── dynamodbtoredshift.py # ETL job: DynamoDB → Redshift
-│ ├── fakedata.py # Generates fake customer data
-│ ├── senddata.py # Sends data to API endpoints (RDD approach)
-│ └── senddata2.py # Alternative API sender (foreach approach)
-├── lambda_functions/
-│ ├── handler.py # Lambda function for customer creation
-│ └── test_handler.py # Unit tests for Lambda function
-├── dependencies/ # Python dependencies for Glue jobs
-└── serverless.yml # Infrastructure as Code configuration
-
-
 
 ## Features
 
