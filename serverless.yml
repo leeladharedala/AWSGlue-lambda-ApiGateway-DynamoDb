@@ -1,0 +1,210 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: deftsquad9
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: serverless-dynamodb-api
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: dynamodb-serverless-api
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  environment:
+    DYNAMODB_TABLE: Customers_Table
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/Customers_Table
+
+resources:
+  Resources:
+    CustomersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Customers_Table
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    GlueS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3BucketName}
+
+    GlueExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: GlueExecutionRole1
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: glue.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: GlueS3AndGluePermissions
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "s3:*"
+                  Resource:
+                    - arn:aws:s3:::${self:custom.s3BucketName}
+                    - arn:aws:s3:::${self:custom.s3BucketName}/*
+                - Effect: Allow
+                  Action:
+                    - glue:*
+                  Resource: "*"
+
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: "arn:aws:logs:*:*:*"
+
+                - Effect: Allow
+                  Action:
+                    - dynamodb:PutItem
+                    - dynamodb:GetItem
+                    - dynamodb:Scan
+                    - dynamodb:UpdateItem
+                    - dynamodb:DescribeTable
+                    - dynamodb:DeleteItem
+                  Resource: arn:aws:dynamodb:${self:provider.region}:*:table/Customers_Table
+
+                - Effect: Allow
+                  Action:
+                    - redshift:CreateCluster
+                    - redshift:DeleteCluster
+                    - redshift:DescribeClusters
+                    - redshift:GetClusterCredentials
+                    - redshift-data:ExecuteStatement
+                    - redshift-data:BatchExecuteStatement
+                    - redshift-data:DescribeStatement
+                    - redshift:ModifyCluster
+                  Resource: "*"
+
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:CreateSecret
+                    - secretsmanager:PutSecretValue
+                    - secretsmanager:GetSecretValue
+                    - secretsmanager:DescribeSecret
+                    - secretsmanager:DeleteSecret
+                    - secretsmanager:ListSecrets
+                    - secretsmanager:TagResource
+                    - secretsmanager:UntagResource
+                  Resource: "*"
+
+          - PolicyName: GlueVPCPermissions
+            PolicyDocument:
+               Version: "2012-10-17"
+               Statement:
+                - Effect: Allow
+                  Action:
+                    - ec2:CreateNetworkInterface
+                    - ec2:DeleteNetworkInterface
+                    - ec2:DescribeNetworkInterfaces
+                    - ec2:DescribeSecurityGroups
+                    - ec2:DescribeSubnets
+                    - ec2:DescribeVpcAttribute
+                    - ec2:DescribeRouteTables
+                    - ec2:DescribeVpcEndpoints
+                    - ec2:CreateTags
+                    - ec2:DeleteTags
+                    - ec2:AttachNetworkInterface
+                    - ec2:DetachNetworkInterface
+                    - ec2:ModifyNetworkInterfaceAttribute
+                  Resource: "*"
+
+
+
+    GlueETLJobUsers:
+      Type: AWS::Glue::Job
+      Properties:
+        Name: GlueFakeProfilesJob
+        Role: GlueExecutionRole1
+        Command:
+          Name: glueetl
+          ScriptLocation: s3://${self:custom.s3BucketName}/code/fakedata.py
+          PythonVersion: "3"
+        DefaultArguments:
+          "--job-language": "python"
+          "--extra-py-files": "s3://${self:custom.s3BucketName}/dependencies/Faker-36.1.0-py3-none-any.whl"
+          "--S3_BUCKET": "${self:custom.s3BucketName}"
+        GlueVersion: "5.0"
+        WorkerType: G.1X
+        NumberOfWorkers: 10
+
+    GlueETLJobSendRDD:
+      Type: AWS::Glue::Job
+      Properties:
+        Name: GlueSendAPIJob_RDD
+        Role: GlueExecutionRole1
+        Command:
+          Name: glueetl
+          ScriptLocation: s3://${self:custom.s3BucketName}/code/senddata.py
+          PythonVersion: "3"
+        DefaultArguments:
+          "--job-language": "python"
+          "--extra-py-files": "s3://${self:custom.s3BucketName}/dependencies/requests-2.32.5-py3-none-any.whl"
+          "--S3_BUCKET": "${self:custom.s3BucketName}"
+          "--api_endpoint":
+            Fn::Join:
+              - ""
+              - - "https://"
+                - Ref: ApiGatewayRestApi
+                - ".execute-api.${self:provider.region}.amazonaws.com/dev/customer"
+        GlueVersion: "5.0"
+        WorkerType: G.1X
+        NumberOfWorkers: 10
+
+    GlueETLJobRedshift:
+      Type: AWS::Glue::Job
+      Properties:
+        Name: GlueSendDatatoRedshift
+        Role: GlueExecutionRole1
+        Command:
+          Name: glueetl
+          ScriptLocation: s3://${self:custom.s3BucketName}/code/dynamodbtoredshift.py
+          PythonVersion: "3"
+        DefaultArguments:
+          "--job-language": "python"
+          "--S3_BUCKET": "${self:custom.s3BucketName}"
+        GlueVersion: "5.0"
+        WorkerType: G.1X
+        NumberOfWorkers: 5
+
+plugins:
+  - serverless-s3-sync
+
+custom:
+  s3BucketName: glue-etl-bucket99999
+  s3Sync:
+    - bucketName: ${self:custom.s3BucketName}
+      localDir: glue
+      bucketPrefix: code/
+    - bucketName: ${self:custom.s3BucketName}
+      localDir: dependencies
+      bucketPrefix: dependencies/
+
+
+functions:
+  createCustomer:
+    handler: lambda_functions/handler.create_customer
+    events:
+      - http:
+          path: customer
+          method: post
+          cors: true
