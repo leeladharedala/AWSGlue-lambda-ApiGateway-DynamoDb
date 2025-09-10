@@ -13,10 +13,6 @@ jobs:
     name: Serverless framework
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: serverless
-
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
