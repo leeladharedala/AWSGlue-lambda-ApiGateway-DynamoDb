@@ -1,0 +1,13 @@
+{
+  "name": "cdh",
+  "version": "1.0.0",
+  "description": "Example of a Python Flask API service backed by DynamoDB with traditional Serverless Framework",
+  "author": "",
+  "devDependencies": {
+    "serverless-python-requirements": "^6.1.0",
+    "serverless-wsgi": "^3.0.4"
+  },
+  "dependencies": {
+    "serverless-s3-sync": "^3.4.0"
+  }
+}
