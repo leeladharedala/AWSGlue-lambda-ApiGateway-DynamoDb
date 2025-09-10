@@ -39,5 +39,6 @@ jobs:
     - name: Deploy to Serverless
       env:
         STAGE: ${{ github.ref == 'refs/heads/main' && 'main' || 'dev' }}
+        SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
       run: serverless deploy --stage $STAGE
 
