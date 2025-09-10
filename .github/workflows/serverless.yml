@@ -29,6 +29,9 @@ jobs:
     - name: Install Serverless Framework
       run: npm install -g serverless
 
+    - name: Install dependencies
+      run: npm install
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
