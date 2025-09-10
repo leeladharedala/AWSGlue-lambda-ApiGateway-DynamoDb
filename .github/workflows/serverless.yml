@@ -10,14 +10,14 @@ on:
 
 jobs:
   deploy:
-    name: Serverless Framework
+    name: Serverless framework
     runs-on: ubuntu-latest
 
-  defaults:
-    run:
-      working-directory: serverless
+    defaults:
+      run:
+        working-directory: serverless
 
-  steps:
+    steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
@@ -41,7 +41,6 @@ jobs:
 
     - name: Deploy to Serverless
       env:
-          STAGE: ${{ github.ref == 'refs/heads/main' && 'main' || 'dev' }}
+        STAGE: ${{ github.ref == 'refs/heads/main' && 'main' || 'dev' }}
       run: serverless deploy --stage $STAGE
-
 
