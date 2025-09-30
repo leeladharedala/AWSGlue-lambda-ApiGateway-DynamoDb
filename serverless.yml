@@ -145,46 +145,46 @@ resources:
           "--S3_BUCKET": "${self:custom.s3BucketName}"
         GlueVersion: "5.0"
         WorkerType: G.1X
-        NumberOfWorkers: 10
-
-    GlueETLJobSendRDD:
-      Type: AWS::Glue::Job
-      Properties:
-        Name: GlueSendAPIJob_RDD
-        Role: GlueExecutionRole1
-        Command:
-          Name: glueetl
-          ScriptLocation: s3://${self:custom.s3BucketName}/code/senddata.py
-          PythonVersion: "3"
-        DefaultArguments:
-          "--job-language": "python"
-          "--extra-py-files": "s3://${self:custom.s3BucketName}/dependencies/requests-2.32.5-py3-none-any.whl"
-          "--S3_BUCKET": "${self:custom.s3BucketName}"
-          "--api_endpoint":
-            Fn::Join:
-              - ""
-              - - "https://"
-                - Ref: ApiGatewayRestApi
-                - ".execute-api.${self:provider.region}.amazonaws.com/dev/customer"
-        GlueVersion: "5.0"
-        WorkerType: G.1X
-        NumberOfWorkers: 10
-
-    GlueETLJobRedshift:
-      Type: AWS::Glue::Job
-      Properties:
-        Name: GlueSendDatatoRedshift
-        Role: GlueExecutionRole1
-        Command:
-          Name: glueetl
-          ScriptLocation: s3://${self:custom.s3BucketName}/code/dynamodbtoredshift.py
-          PythonVersion: "3"
-        DefaultArguments:
-          "--job-language": "python"
-          "--S3_BUCKET": "${self:custom.s3BucketName}"
-        GlueVersion: "5.0"
-        WorkerType: G.1X
         NumberOfWorkers: 5
+
+    # GlueETLJobSendRDD:
+    #   Type: AWS::Glue::Job
+    #   Properties:
+    #     Name: GlueSendAPIJob_RDD
+    #     Role: GlueExecutionRole1
+    #     Command:
+    #       Name: glueetl
+    #       ScriptLocation: s3://${self:custom.s3BucketName}/code/senddata.py
+    #       PythonVersion: "3"
+    #     DefaultArguments:
+    #       "--job-language": "python"
+    #       "--extra-py-files": "s3://${self:custom.s3BucketName}/dependencies/requests-2.32.5-py3-none-any.whl"
+    #       "--S3_BUCKET": "${self:custom.s3BucketName}"
+    #       "--api_endpoint":
+    #         Fn::Join:
+    #           - ""
+    #           - - "https://"
+    #             - Ref: ApiGatewayRestApi
+    #             - ".execute-api.${self:provider.region}.amazonaws.com/dev/customer"
+    #     GlueVersion: "5.0"
+    #     WorkerType: G.1X
+    #     NumberOfWorkers: 5
+
+    # GlueETLJobRedshift:
+    #   Type: AWS::Glue::Job
+    #   Properties:
+    #     Name: GlueSendDatatoRedshift
+    #     Role: GlueExecutionRole1
+    #     Command:
+    #       Name: glueetl
+    #       ScriptLocation: s3://${self:custom.s3BucketName}/code/dynamodbtoredshift.py
+    #       PythonVersion: "3"
+    #     DefaultArguments:
+    #       "--job-language": "python"
+    #       "--S3_BUCKET": "${self:custom.s3BucketName}"
+    #     GlueVersion: "5.0"
+    #     WorkerType: G.1X
+    #     NumberOfWorkers: 5
 
 plugins:
   - serverless-s3-sync
