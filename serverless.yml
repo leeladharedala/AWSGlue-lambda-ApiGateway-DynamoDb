@@ -190,7 +190,7 @@ plugins:
   - serverless-s3-sync
 
 custom:
-  s3BucketName: glue-etl-bucket99999
+  s3BucketName: glue-etl-bucket9999
   s3Sync:
     - bucketName: ${self:custom.s3BucketName}
       localDir: glue
